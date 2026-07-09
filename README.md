@@ -82,30 +82,6 @@ My objective is to become a highly skilled **Security Operations Center (SOC) An
 
 This repository will continue to grow as I complete additional certifications, cybersecurity projects, threat-hunting exercises, and security investigations.
 
----
-
-# 📂 Repository Contents
-
-- Microsoft Student SOC Program Foundations
-- KC7 Cyber Defense Platform Investigations
-- Kusto Query Language (KQL) Queries
-- Threat Hunting Exercises
-- Security Investigation Reports
-- Cybersecurity Notes
-- Future Cybersecurity Projects
-
----
-
-## 🚀 Current Learning Focus
-
-- Security Operations Center (SOC)
-- Microsoft Sentinel
-- Threat Hunting
-- Incident Response
-- Detection Engineering
-- Kusto Query Language (KQL)
-- Blue Team Operations
-- Security Monitoring
 
 ---
 
