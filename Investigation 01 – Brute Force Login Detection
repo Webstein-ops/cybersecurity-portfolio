@@ -1,0 +1,70 @@
+## Overview
+
+Simulated SOC investigation into a spike of failed authentication attempts against a single user account, originating from one external IP within a narrow time window. Objective: determine whether this represents a brute-force attempt and whether account compromise occurred.
+
+## Scope
+
+- Account: single targeted user
+- Source: single external IP
+- Timeframe: short, concentrated burst of failed auth events
+- Log sources: authentication logs, account activity logs
+
+## Methodology
+
+Pulled auth logs filtered to the affected account. Correlated events on username, source IP, timestamp, and result code to reconstruct the attempt sequence. Checked for:
+
+1. Any successful auth following the failed attempts
+2. Post-event account activity (privilege changes, new sessions, config changes)
+3. Distribution of source IPs (single vs. multiple, to rule out distributed/credential-stuffing pattern)
+
+KQL used to filter and aggregate failed logon events by account and source IP, then sort by timestamp to establish sequence and interval consistency.
+
+## Findings
+
+**Attempt pattern:** Consistent, short intervals between failures — consistent with scripted/automated attempts rather than manual entry. No variance in timing that would suggest a human retrying a forgotten password.
+
+**Source:** 100% of failed attempts traced to a single external IP. No distribution across multiple sources — rules out credential stuffing from a botnet, points to a single-source brute-force attempt (dictionary or targeted password list).
+
+**Outcome:** No successful authentication in the log window. No privilege escalation, no new session creation, no config/permission changes post-event.
+
+**Assessment:** Brute-force attempt, contained. No indication of compromise.
+
+## IOCs
+
+| Indicator | Value |
+|---|---|
+| Failed login count | High (anomalous vs. account baseline) |
+| Source IP | Single, external |
+| Target account | Single |
+| Success rate | 0% |
+| Post-event anomalies | None detected |
+
+## Risk Rating: Medium
+
+Unsuccessful, but the attempt pattern (single account, high-frequency, automated) indicates a deliberate targeted attack rather than noise. Left unmitigated, this account remains exposed to future attempts, especially if password reuse is a factor.
+
+## Recommendations
+
+- Enforce MFA on the affected account and org-wide if not already in place.
+- Implement/verify account lockout threshold (e.g., lockout after N failures within X minutes).
+- Add detection rule for repeated-failure-single-IP pattern if not already covered.
+- Block/flag source IP pending further threat intel review.
+- Audit password against known-breach lists; force reset if reused/weak.
+
+## Detection Query (KQL example)
+
+```kql
+SigninLogs
+| where ResultType != 0
+| summarize FailedAttempts = count() by UserPrincipalName, IPAddress, bin(TimeGenerated, 5m)
+| where FailedAttempts > 5
+| order by TimeGenerated desc
+```
+
+## Skills Demonstrated
+
+Authentication log analysis · KQL · Event correlation · IOC identification · Blue team triage · SOC investigation workflow
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
