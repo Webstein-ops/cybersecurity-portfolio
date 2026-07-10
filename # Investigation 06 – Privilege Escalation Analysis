@@ -1,0 +1,88 @@
+## Overview
+
+Simulated SOC investigation into an unauthorized privilege change on a standard user account. Trigger: account observed with elevated permissions/admin group membership outside its documented access level. Objective: determine whether the escalation was authorized (legitimate IAM change) or the result of account compromise.
+
+## Investigation Question
+
+Did this user account obtain elevated privileges without proper authorization?
+
+## Hypothesis
+
+An attacker compromised a standard user account and used it (or a follow-on action) to escalate privileges — a common step once initial access is established, used to bypass controls and gain broader system access.
+
+## Data Sources
+
+- User account activity logs
+- Authentication events
+- Privilege/role assignment logs (IAM change history)
+- Admin group membership changes
+- Endpoint security events
+
+## Methodology
+
+**Step 1 — Privilege change review**
+Checked IAM/directory logs for the specific change: what privilege or group membership was added, when, and by which actor (self-service, admin action, or automated process). Cross-referenced against change management/ticketing to check for an authorized request.
+
+**Step 2 — Behavioral baseline comparison**
+Compared the account's login history and access pattern against its established baseline — reviewed whether the timing of the privilege change aligned with normal business hours/activity, or stood out as anomalous (off-hours, immediately following a suspicious login, etc.).
+
+**Step 3 — Post-escalation activity correlation**
+Correlated the privilege change with subsequent account activity — authentication to new systems, administrative actions, command execution, or access to resources the account wouldn't normally touch — to determine whether the elevated access was actually exercised.
+
+## Findings
+
+**Privilege change:** Account was granted elevated permissions (admin group membership / role change) outside its documented access scope. No corresponding authorized change ticket was identified at time of investigation — this is the central open question requiring IAM/HR follow-up to confirm or rule out legitimacy.
+
+**Timing:** Change occurred outside the account's typical activity window, which is inconsistent with a routine, planned access request and more consistent with either an automated attack step or an untracked manual change.
+
+**Behavior post-escalation:** Reviewed for administrative actions, command execution, and access to restricted resources following the privilege grant. No confirmed malicious action was identified in the available logs, but visibility gaps mean this isn't a clean bill — see recommendations.
+
+**Assessment:** Unconfirmed privilege escalation. Pattern (unscheduled change, off-baseline timing, no matching change ticket) is consistent with a compromise-driven escalation attempt, but conclusive proof (e.g., correlated malicious login or confirmed absence of an approved request) was not fully established during this investigation.
+
+## IOCs
+
+| Indicator | Observation |
+|---|---|
+| Privilege/role change | Detected, outside documented scope |
+| Change ticket / approval | Not identified |
+| Timing | Off-baseline for account |
+| Post-escalation activity | Reviewed, no confirmed malicious action |
+| Account behavior vs. baseline | Deviation observed |
+
+## MITRE ATT&CK Mapping
+
+| Technique | ID |
+|---|---|
+| Valid Accounts | T1078 |
+| Account Manipulation | T1098 |
+| Abuse Elevation Control Mechanism | T1548 |
+
+## Risk Rating: High
+
+Privilege escalation is a pivotal stage in most intrusions — it's the difference between a limited foothold and meaningful control over the environment. Rated high on technique risk given the unconfirmed change-approval gap, independent of whether follow-on malicious activity is ultimately confirmed.
+
+## Recommendations
+
+- Confirm with IAM/account owner whether the privilege change was requested and approved; reverse immediately if not.
+- If unauthorized, force credential reset and review the account for prior suspicious authentication (this ties back to how the account was likely compromised in the first place).
+- Close the logging gap identified in Step 3 — ensure privilege changes trigger alerts in real time rather than being caught on retrospective review.
+- Require change-ticket correlation for all privilege/group modifications going forward (automated reconciliation between IAM logs and ticketing system).
+- Apply least-privilege review across the environment to reduce standing accounts with unnecessary elevated access.
+
+## Detection Query Example (KQL)
+
+```kql
+AuditLogs
+| where OperationName has_any ("Add member to role", "Add member to group")
+| where TargetResources has "Admin"
+| project TimeGenerated, InitiatedBy, TargetResources, OperationName
+| order by TimeGenerated desc
+```
+
+## Skills Demonstrated
+
+Privilege/IAM analysis · Event correlation · Baseline deviation detection · MITRE ATT&CK mapping · KQL · Incident investigation · Blue team operations
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
