@@ -1,0 +1,88 @@
+## Overview
+
+Simulated SOC investigation into anomalous cross-system authentication activity. Trigger: a single account authenticating to multiple internal hosts outside its normal access baseline. Objective: determine whether this represents lateral movement following account compromise, or legitimate (if unusual) admin activity.
+
+## Investigation Question
+
+Did a compromised account authenticate to and move between multiple internal systems outside its normal scope?
+
+## Hypothesis
+
+An attacker gained access to a valid account and used it to pivot across internal hosts to expand access — standard post-compromise behavior once initial access is established.
+
+## Data Sources
+
+- Authentication logs
+- User activity/behavior baseline
+- Host access events
+- Network connection logs
+- Endpoint activity records
+
+## Methodology
+
+**Step 1 — Baseline deviation check**
+Reviewed authentication events for the account against its normal pattern: typical source systems, login hours, and host access scope. Flagged deviations — new source systems, off-hours logins, access to hosts not in the account's normal footprint.
+
+**Step 2 — Host-to-host correlation**
+Sequenced authentication events across the flagged hosts by timestamp to establish access order. Checked whether the pattern matched a plausible pivot chain (host A → host B → host C in rapid succession) versus unrelated/coincidental access.
+
+**Step 3 — Post-access behavior review**
+For each host accessed, checked for follow-on activity: privilege/group changes, new process execution, remote execution artifacts (PsExec, WMI, WinRM, scheduled tasks), and any signs the account was used beyond simple authentication.
+
+## Findings
+
+**Authentication pattern:** Account authenticated to multiple hosts outside its established baseline, in a sequence and timeframe consistent with a deliberate pivot rather than routine, spread-out admin work.
+
+**Access order:** Sequential host access with short intervals between hops — the kind of tight timing you'd expect from an attacker (or script) working through a target list, not a user or admin handling unrelated day-to-day tasks.
+
+**Post-access activity:** Reviewed for privilege escalation and remote execution artifacts on each accessed host. No confirmed privilege escalation identified. Remote access activity was present and reviewed but did not conclusively indicate tooling associated with known lateral movement techniques (PsExec/WMI/RDP abuse) beyond the authentication events themselves.
+
+**Assessment:** Pattern is consistent with potential lateral movement, but evidence is not conclusive enough to confirm full compromise. Account activity requires validation against ticketed admin work or user interview before final classification (true positive vs. legitimate-but-unusual access).
+
+## IOCs
+
+| Indicator | Observation |
+|---|---|
+| Multi-host authentication | Detected, outside baseline |
+| Access sequence | Rapid, sequential (pivot-consistent) |
+| Off-baseline source systems | Yes |
+| Remote execution artifacts | Reviewed, inconclusive |
+| Privilege escalation | Not confirmed |
+
+## MITRE ATT&CK Mapping
+
+| Technique | ID |
+|---|---|
+| Remote Services | T1021 |
+| Valid Accounts | T1078 |
+| Lateral Tool Transfer | T1570 |
+
+## Risk Rating: High
+
+Unconfirmed as a full compromise, but lateral movement is a critical stage in most intrusion chains — it's how attackers go from a single foothold to environment-wide impact. Rated high pending confirmation given the pattern match, not downgraded just because full compromise wasn't proven.
+
+## Recommendations
+
+- Validate the account activity against change tickets / admin schedules before closing as false positive.
+- If unvalidated, force credential reset and review MFA status on the account.
+- Enable/verify logging for remote execution tooling (PsExec, WMI, WinRM) fleet-wide to close the visibility gap noted in Step 3.
+- Apply tiered administration (restrict high-privilege accounts from authenticating to lower-tier hosts) to reduce lateral movement blast radius going forward.
+- Build a detection rule for the specific pattern observed (single account, N+ hosts, short window) rather than relying on ad hoc review.
+
+## Detection Query Example (KQL)
+
+```kql
+SigninLogs
+| where ResultType == 0
+| summarize DistinctHosts = dcount(DeviceDetail), Hosts = make_set(DeviceDetail) by UserPrincipalName, bin(TimeGenerated, 30m)
+| where DistinctHosts >= 3
+| order by DistinctHosts desc
+```
+
+## Skills Demonstrated
+
+Authentication analysis · Cross-host event correlation · Hypothesis-driven threat hunting · MITRE ATT&CK mapping · KQL · Incident response · Blue team investigation methodology
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
