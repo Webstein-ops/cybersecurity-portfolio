@@ -1,0 +1,96 @@
+## Overview
+
+Proactive threat-hunting exercise using a provided set of IOCs (IPs, domains, file hashes, filenames) sourced from threat intelligence. Unlike the earlier investigations, this wasn't alert-driven — the goal was to hunt for evidence of these indicators across the environment before any automated detection fired.
+
+## Investigation Question
+
+Are any of the provided IOCs present in the environment, and if so, do they indicate actual malicious activity or just coincidental/benign matches?
+
+## Hypothesis
+
+If a threat actor interacted with the environment using the infrastructure/tooling tied to these IOCs, traces should be recoverable in authentication, network, DNS, or endpoint telemetry — even without a triggered alert.
+
+## Data Sources
+
+- Authentication logs
+- Endpoint activity / process execution logs
+- Network traffic records
+- DNS query logs
+- File activity records
+- Existing security alerts (for cross-reference)
+
+## Methodology
+
+**Step 1 — IOC intake and triage**
+Reviewed the provided indicator set and categorized by type (IP, domain, file hash, filename, behavioral pattern). Prioritized based on indicator specificity — file hashes and full domains are higher-confidence than partial patterns or generic IPs, which need more context before being treated as actionable.
+
+**Step 2 — Telemetry sweep**
+Queried each data source for matches against the indicator list:
+
+- IPs/domains checked against network and DNS logs for any outbound connection or resolution.
+- File hashes checked against endpoint file/process telemetry for execution or presence on disk.
+- Suspicious filenames checked against file creation/access events.
+- Flagged user activity patterns checked against authentication baselines.
+
+**Step 3 — Correlation of any hits**
+For any indicator that returned a match, correlated it against the surrounding timeline and other data sources to determine whether it was an isolated, explainable event or part of a broader pattern — checking associated hosts, accounts, and any nearby suspicious activity.
+
+## Findings
+
+**IOC matches:** Telemetry sweep was completed across all provided indicator types. Matches (if any) were run through the correlation step to rule out coincidental hits — a domain match in DNS logs alone, for example, doesn't confirm malicious activity without supporting evidence like an unusual connection pattern or endpoint artifact.
+
+**Correlation outcome:** No indicator produced a corroborated chain of evidence strong enough to confirm active compromise. Where matches existed, they didn't hold up as part of a broader attack pattern once cross-referenced against other sources.
+
+**Process value:** This hunt didn't surface a confirmed incident, which is itself a legitimate outcome — the exercise validates telemetry coverage (can these IOC types actually be searched across current log sources) and rules out the specific threat intel provided, narrowing the field for future hunts.
+
+**Assessment:** No confirmed compromise from this IOC set. Telemetry sweep completed with adequate data source coverage; gaps identified (if any) in a given source should be closed before the next hunt cycle.
+
+## IOC Coverage
+
+| Indicator Type | Search Focus | Result |
+|---|---|---|
+| IP addresses | Outbound connections | No corroborated malicious activity |
+| Domains | DNS resolution / network logs | No corroborated malicious activity |
+| File hashes | Endpoint file/process presence | No matches on disk or in execution logs |
+| Filenames | File creation/access events | No suspicious matches |
+| User activity patterns | Auth baseline comparison | No anomalies tied to provided indicators |
+
+## MITRE ATT&CK Mapping
+
+Threat hunting is technique-agnostic by design — it's a detection methodology, not tied to a single ATT&CK technique. Relevant hunting categories for this exercise map loosely to:
+
+| Technique | ID |
+|---|---|
+| Command and Control (general) | TA0011 |
+| Exfiltration (general) | TA0010 |
+| Malicious File | T1204.002 |
+
+## Risk Rating: Low (this cycle)
+
+No confirmed compromise from the provided IOC set. Rating reflects this specific hunt's outcome, not a statement on the organization's overall risk posture — a clean hunt result is a point-in-time finding, not a guarantee.
+
+## Recommendations
+
+- Retain the IOC set and re-run the sweep periodically — some indicators (especially newly published ones) may not show hits until an actor actually engages the environment.
+- Feed confirmed-clean indicators back into detection tooling as low-priority watchlist entries rather than discarding them.
+- Use this hunt cycle to validate/document telemetry coverage gaps — if any data source couldn't be queried cleanly for a given indicator type, that's a detection engineering finding worth its own ticket.
+- Build hunts like this into a recurring cadence (e.g., weekly/monthly against fresh threat intel feeds) rather than one-off exercises.
+
+## Detection Query Example (KQL)
+
+```kql
+let maliciousIPs = dynamic(["1.2.3.4", "5.6.7.8"]);
+let maliciousHashes = dynamic(["a1b2c3...", "d4e5f6..."]);
+DeviceNetworkEvents
+| where RemoteIP in (maliciousIPs)
+| union (DeviceFileEvents | where SHA256 in (maliciousHashes))
+| project Timestamp, DeviceName, ActionType, RemoteIP, SHA256, FileName
+```
+
+## Skills Demonstrated
+
+Proactive threat hunting · IOC analysis and triage · Threat intelligence application · Multi-source log correlation · KQL · Blue team operations
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
