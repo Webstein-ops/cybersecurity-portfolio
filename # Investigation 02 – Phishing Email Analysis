@@ -1,0 +1,83 @@
+## Overview
+
+Simulated SOC investigation into a user-reported email flagged as suspicious. Objective: determine whether the message is phishing, identify indicators, and assess whether any user interaction led to compromise.
+
+## Scope
+
+- Source: employee-reported email
+- Focus: header/sender analysis, content, embedded URLs, attachments
+- Goal: classify as legitimate vs. phishing, assess blast radius
+
+## Methodology
+
+Reviewed the reported email across four layers:
+
+1. **Header/sender analysis** — checked sender address against claimed identity, looked for spoofing indicators (display name mismatch, lookalike domain, SPF/DKIM/DMARC anomalies).
+2. **Content analysis** — reviewed message body for social engineering markers (urgency, authority pressure, unusual requests).
+3. **URL analysis** — inspected embedded link structure and destination domain for reputation/typosquatting.
+4. **Attachment analysis** — flagged for further sandboxing/hash lookup if present.
+5. **Post-exposure check** — reviewed whether the recipient interacted with the link/attachment, and checked auth logs for anomalies afterward.
+
+## Findings
+
+**Sender:** Address did not align with the organization it claimed to represent — inconsistent with legitimate domain, consistent with spoofing/display-name deception.
+
+**Content:** Message used urgency-based social engineering (time pressure, implied consequence for inaction) to push the recipient toward interacting with the link before scrutinizing it.
+
+**URL:** Embedded link pointed to an external domain with poor/unverified reputation. Link structure (redirect chain / non-matching display text vs. actual href) consistent with credential-harvesting infrastructure rather than legitimate business communication.
+
+**Attachment:** Present, flagged for additional analysis (hash reputation check recommended if not already run).
+
+**Post-exposure:** No confirmed credential submission or malware execution identified. No downstream auth anomalies tied to the recipient account.
+
+**Assessment:** Phishing attempt, credential-harvesting-style. No confirmed compromise.
+
+## IOCs
+
+| Indicator | Observation |
+|---|---|
+| Sender address | Spoofed / mismatched identity |
+| Embedded URL | Suspicious external domain |
+| Attachment | Present, pending sandbox/hash verification |
+| Social engineering | Urgency-based pretext |
+| User interaction | No confirmed compromise |
+
+## MITRE ATT&CK Mapping
+
+| Technique | ID |
+|---|---|
+| Phishing | T1566 |
+| Spearphishing Attachment | T1566.001 |
+| Spearphishing Link | T1566.002 |
+
+## Risk Rating: High
+
+No confirmed compromise, but phishing is a primary initial-access vector. A single successful click on this type of link is enough to result in credential theft or malware delivery — severity is rated on potential impact, not just observed outcome.
+
+## Recommendations
+
+- Block sender domain and flagged URL at the email gateway/proxy level.
+- Run attachment through sandbox/hash reputation check if not already done.
+- Search mailbox-wide for other recipients of the same campaign (same sender/domain/subject).
+- Force credential reset for the recipient if any doubt exists about link interaction.
+- Reinforce phishing awareness training, particularly around urgency-based pretexts.
+- Verify SPF/DKIM/DMARC enforcement is catching similar spoofing attempts.
+
+## Detection Query Example (KQL)
+
+```kql
+EmailEvents
+| where SenderFromDomain !in (KnownGoodDomains)
+| where UrlCount > 0
+| join EmailUrlInfo on NetworkMessageId
+| where Url has_any ("suspicious-domain-pattern")
+| project Timestamp, SenderFromAddress, RecipientEmailAddress, Subject, Url
+```
+
+## Skills Demonstrated
+
+Phishing analysis · Email header/IOC analysis · MITRE ATT&CK mapping · URL/domain reputation review · KQL · Incident response · Blue team triage
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
