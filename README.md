@@ -1,94 +1,68 @@
 # 🛡️ Cybersecurity Portfolio
 
-Welcome to my Cybersecurity Portfolio.
-
-This repository serves as a collection of my cybersecurity training, certifications, hands-on investigations, and technical skills. It reflects my commitment to continuous learning and my journey toward becoming a professional Security Operations Center (SOC) Analyst.
+A collection of hands-on SOC investigations, KQL queries, certifications, and blue team write-ups documenting my path toward becoming a Security Operations Center (SOC) Analyst.
 
 ---
 
-## 👨‍💻 About Me
+## About This Repo
 
-I am an aspiring **Security Operations Center (SOC) Analyst** with a strong interest in cybersecurity, threat detection, incident response, and blue team operations.
+This is where I keep the practical side of my cybersecurity work — simulated investigations, threat-hunting exercises, and detection queries, all written up the way I'd document them on a real SOC team. The goal isn't just to collect certificates; it's to show the actual analysis process: how I work through logs, correlate evidence, and reach a conclusion.
 
-I enjoy investigating security events, analyzing logs, identifying Indicators of Compromise (IOCs), and applying industry-standard techniques to detect and respond to cyber threats. My goal is to continuously develop practical skills that prepare me to protect organizations against evolving cyber threats.
-
----
-
-# 🎓 Certifications
-
-## Microsoft Student SOC Program Foundations
-
-**Issuer:** Microsoft  
-**Completed:** May 7, 2025
-
-Successfully completed the Microsoft Student SOC Program Foundations training, gaining foundational knowledge of:
-
-- Security Operations Center (SOC)
-- Security Monitoring
-- Threat Detection
-- Incident Response
-- Log Analysis
-- Cybersecurity Fundamentals
-
-### Skills Acquired
-
-- Security Operations Center (SOC)
-- Security Monitoring
-- Incident Detection & Response
-- Threat Analysis
-- Log Analysis
-- Cybersecurity Fundamentals
+I'm focused on the blue team side of security — monitoring, detection, incident response — and this repo grows as I take on more investigations and training.
 
 ---
 
-# 🔍 Hands-on Experience
+## SOC Investigations
 
-## KC7 Cyber Defense Platform
+Simulated enterprise investigations covering common SOC scenarios. Each one follows a consistent structure: hypothesis, methodology, evidence analysis, IOCs, MITRE ATT&CK mapping, risk rating, and a working KQL detection query.
 
-Successfully completed multiple hands-on investigations using the **KC7 Cyber Defense Platform**, where I applied **Kusto Query Language (KQL)** to analyze security logs, investigate suspicious activities, identify Indicators of Compromise (IOCs), and perform threat-hunting exercises within realistic Security Operations Center (SOC) environments.
-
-### Skills Demonstrated
-
-- Kusto Query Language (KQL)
-- Threat Hunting
-- Security Event Investigation
-- Incident Investigation
-- Log Analysis
-- IOC Analysis
-- Blue Team Operations
-
----
-
-# 💻 Technical Skills
-
-- Security Operations Center (SOC)
-- Microsoft Sentinel
-- Kusto Query Language (KQL)
-- Threat Hunting
-- Security Monitoring
-- Incident Response
-- Log Analysis
-- IOC Analysis
-- Blue Team Operations
-- Cybersecurity Fundamentals
+| # | Investigation | Category | Severity |
+|---|---|---|---|
+| 01 | Brute Force Login Detection | Authentication | Medium |
+| 02 | Phishing Email Analysis | Email Security | High |
+| 03 | Suspicious PowerShell Execution | Endpoint / LOLBin | Medium |
+| 04 | Ransomware Incident Investigation | Malware / Endpoint | Critical |
+| 05 | Lateral Movement Detection | Threat Hunting | High |
+| 06 | Privilege Escalation Analysis | IAM / Identity | High |
+| 07 | Data Exfiltration Investigation | Network / DLP | High |
+| 08 | Threat Hunting Using IOCs | Proactive Hunting | Low–Medium |
 
 ---
 
-# 🎯 Career Objective
+## Certifications
 
-I am committed to building a successful career in cybersecurity by continuously improving my technical knowledge through industry certifications, hands-on investigations, and real-world security projects.
+### Microsoft Student SOC Program Foundations
+**Issuer:** Microsoft · **Completed:** May 7, 2025
 
-My objective is to become a highly skilled **Security Operations Center (SOC) Analyst**, capable of detecting, investigating, and responding to cyber threats while helping organizations strengthen their security posture.
+Foundational training covering SOC operations, security monitoring, threat detection, incident response, and log analysis.
 
-This repository will continue to grow as I complete additional certifications, cybersecurity projects, threat-hunting exercises, and security investigations.
+**Skills acquired:** SOC fundamentals · Security monitoring · Incident detection & response · Threat analysis · Log analysis
 
+### KC7 Cyber Defense Platform
+Hands-on investigations using KQL to analyze security logs, investigate suspicious activity, identify IOCs, and run threat-hunting exercises in simulated SOC environments.
+
+**Skills demonstrated:** KQL · Threat hunting · Security event investigation · Incident investigation · Log analysis · IOC analysis
+
+*More certifications added as I complete them.*
 
 ---
 
-## 📫 Connect With Me
+## Technical Skills
 
-**GitHub:** https://github.com/Webstein-ops
+`Security Operations Center (SOC)` · `Microsoft Sentinel` · `Kusto Query Language (KQL)` · `Threat Hunting` · `Security Monitoring` · `Incident Response` · `Log Analysis` · `IOC Analysis` · `MITRE ATT&CK` · `Blue Team Operations`
 
 ---
 
-> *"Cybersecurity is a continuous journey of learning, adapting, and defending against an ever-evolving threat landscape."*
+## What's Next
+
+I'm continuing to build this out with additional investigations, threat-hunting exercises, and detection queries as I train. Longer term, I'm working toward a full-time SOC Analyst role and want this repo to reflect the depth of analysis, not just the breadth of topics covered.
+
+---
+
+## Connect
+
+**GitHub:** [Webstein-ops](https://github.com/Webstein-ops)
+
+---
+
+> *Cybersecurity is a continuous journey of learning, adapting, and defending against an ever-evolving threat landscape.*
