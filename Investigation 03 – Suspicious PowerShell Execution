@@ -1,0 +1,81 @@
+Investigation 03 – Suspicious PowerShell Execution
+
+## Overview
+
+Simulated SOC investigation into anomalous PowerShell activity flagged on an endpoint. PowerShell is a legitimate admin tool, but its scripting/remote execution capabilities make it a common living-off-the-land (LOLBin) technique — objective was to determine whether the observed execution was malicious or legitimate admin activity.
+
+## Scope
+
+- Endpoint: single host, flagged PowerShell execution
+- Focus: command-line arguments, process lineage, network activity, correlated endpoint events
+- Goal: classify as benign admin activity vs. malicious execution, assess impact
+
+## Methodology
+
+1. **PowerShell log review** — pulled execution events (Script Block Logging / 4104, process creation / 4688 if available) for the flagged host.
+2. **Command-line analysis** — inspected arguments for indicators of malicious use: encoded/Base64 payloads (`-enc`, `-EncodedCommand`), hidden window flags (`-w hidden`, `-WindowStyle Hidden`), execution policy bypass (`-ep bypass`), download cradles (`IEX`, `Net.WebClient`, `Invoke-WebRequest`).
+3. **Process lineage** — checked parent-child process relationship (what spawned `powershell.exe` — Office app, script host, scheduled task, etc., vs. expected admin tooling).
+4. **Network correlation** — checked for outbound connections tied to the PowerShell process (potential C2 or payload download).
+5. **Post-execution check** — reviewed for persistence artifacts (registry run keys, scheduled tasks, new services) created after the PowerShell session.
+
+## Findings
+
+**Execution pattern:** Command-line arguments deviated from standard administrative usage — use of non-standard parameters consistent with attempts to obscure execution intent or interact with external resources.
+
+**Process context:** Reviewed user account and parent process context; flagged as inconsistent with expected admin workflow baseline for this host (details would normally be filled in from actual parent-process/user data).
+
+**Network activity:** Outbound connection attempts from the PowerShell process were investigated for ingress tool transfer / payload download behavior.
+
+**Persistence:** No confirmed persistence mechanism (no new run keys, scheduled tasks, or services observed tied to this execution).
+
+**Malware verdict:** No confirmed malware execution or payload detonation. Activity is suspicious enough to warrant containment-level response and continued monitoring, but not confirmed as a successful compromise.
+
+**Assessment:** Suspicious PowerShell usage consistent with LOLBin technique, not fully confirmed malicious, escalated for continued monitoring.
+
+## IOCs
+
+| Indicator | Observation |
+|---|---|
+| Process | `powershell.exe` |
+| Execution method | Non-standard command-line parameters |
+| Encoding | Reviewed for `-EncodedCommand`/obfuscation |
+| Network activity | Outbound connection investigated |
+| Persistence | None confirmed |
+
+## MITRE ATT&CK Mapping
+
+| Technique | ID |
+|---|---|
+| PowerShell | T1059.001 |
+| Ingress Tool Transfer | T1105 |
+| Obfuscated Files or Information | T1027 |
+
+## Risk Rating: Medium
+
+No confirmed compromise, but PowerShell abuse is a common precursor to payload delivery, persistence, and lateral movement in real intrusions. Rated on technique risk (LOLBin abuse potential) rather than confirmed outcome.
+
+## Recommendations
+
+- Enable PowerShell Script Block Logging (Event ID 4104) and Module Logging org-wide if not already on.
+- Set PowerShell execution policy to restrict unsigned/remote scripts where feasible.
+- Deploy application control (e.g., WDAC/AppLocker) to limit PowerShell usage to authorized admin contexts.
+- Alert on known-suspicious command patterns (`-enc`, `-w hidden`, `IEX (New-Object Net.WebClient)`, etc.).
+- Correlate PowerShell alerts with EDR process-tree data for faster triage.
+- Isolate/rescan the host if any persistence indicators are found on follow-up review.
+
+## Detection Query Example (KQL)
+
+```kql
+DeviceProcessEvents
+| where FileName =~ "powershell.exe"
+| where ProcessCommandLine has_any ("-enc", "-EncodedCommand", "-w hidden", "-WindowStyle Hidden", "IEX", "DownloadString")
+| project Timestamp, DeviceName, AccountName, ProcessCommandLine, InitiatingProcessFileName
+```
+
+## Skills Demonstrated
+
+Endpoint/process investigation · PowerShell log analysis · Command-line IOC identification · MITRE ATT&CK mapping · KQL · EDR triage · Blue team response
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
