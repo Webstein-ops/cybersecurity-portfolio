@@ -1,0 +1,81 @@
+## Overview
+
+Simulated SOC investigation into an in-progress ransomware event. Trigger: multiple EDR alerts plus user reports of inaccessible files, correlating with a process performing mass file operations in a short window. Objective: confirm ransomware activity, scope impact, and drive containment.
+
+## Scope
+
+- Endpoint(s): initially one host, checked for spread
+- Focus: file modification telemetry, process behavior, lateral movement indicators
+- Goal: confirm/deny ransomware, determine blast radius, support containment decision
+
+## Methodology
+
+1. **Alert triage** — correlated EDR alerts with user-reported file access issues to establish initial timeline.
+2. **File activity analysis** — reviewed file modification/rename events for volume, rate, and extension pattern (mass renames/appended extensions are a strong ransomware signal).
+3. **Process analysis** — identified the process responsible for the file operations, checked its parent process and binary path/signature for legitimacy.
+4. **Lateral movement check** — reviewed network logs and remote service usage (SMB, RDP) to determine if the process or actor touched other hosts.
+5. **Scope determination** — checked EDR fleet-wide for the same process hash/behavior on other endpoints.
+6. **Containment support** — flagged affected host(s) for isolation pending full analysis.
+
+## Findings
+
+**File activity:** High-volume file modifications in a short window, consistent with automated encryption rather than normal user I/O — rate and pattern (rapid sequential writes across many directories) don't match typical application or user behavior.
+
+**Process behavior:** A single process was responsible for the bulk of file operations. Behavior — enumerating directories then modifying files sequentially — is consistent with ransomware encryption routines rather than legitimate backup/sync/indexing tools.
+
+**Scope:** No confirmed spread to additional endpoints identified during the investigation window. Network logs were reviewed for remote service abuse (SMB/RDP) as a lateral movement vector — no confirmed pivot found at time of writing.
+
+**Data impact:** Consistent with file encryption in progress on the affected host. No confirmed successful exfiltration or backup tampering identified.
+
+**Assessment:** Active/attempted ransomware encryption on a single endpoint. Contained to that host based on available evidence; requires isolation and deeper forensic follow-up to fully rule out lateral movement.
+
+## IOCs
+
+| Indicator | Observation |
+|---|---|
+| File activity | Mass modification/rename, short window |
+| Process | Unidentified binary performing bulk file I/O |
+| Encryption pattern | Sequential, directory-by-directory |
+| Lateral movement | Investigated, none confirmed |
+| Additional hosts affected | None confirmed |
+
+## MITRE ATT&CK Mapping
+
+| Technique | ID |
+|---|---|
+| Data Encrypted for Impact | T1486 |
+| Command and Scripting Interpreter | T1059 |
+| File and Directory Discovery | T1083 |
+| Remote Services | T1021 |
+
+## Risk Rating: Critical
+
+Ransomware directly threatens data availability and business continuity. Even scoped to a single host, this rating reflects worst-case blast radius (encryption spreading via shared drives/lateral movement) rather than confirmed current impact — critical severity is standard for any confirmed/suspected active encryption event regardless of scope at time of detection.
+
+## Recommendations
+
+- **Immediate:** Isolate the affected endpoint from the network to halt further encryption/spread.
+- Kill the identified malicious process; preserve a memory/disk image before remediation for forensics.
+- Verify offline/immutable backup integrity before considering restoration.
+- Fleet-wide sweep for the same process hash/behavior signature.
+- Restrict SMB/RDP between endpoints where not operationally required (segmentation limits lateral spread in future incidents).
+- Review EDR alerting thresholds for mass-file-modification detection — tune for faster time-to-alert.
+- Post-incident: rotate credentials used on the affected host, review for initial access vector (phishing, RDP brute-force, exploited service).
+
+## Detection Query Example (KQL)
+
+```kql
+DeviceFileEvents
+| where ActionType == "FileModified" or ActionType == "FileRenamed"
+| summarize FileOps = count() by InitiatingProcessFileName, DeviceName, bin(Timestamp, 5m)
+| where FileOps > 100
+| order by FileOps desc
+```
+
+## Skills Demonstrated
+
+Ransomware/malware investigation · Endpoint & process analysis · File telemetry analysis · Lateral movement triage · MITRE ATT&CK mapping · KQL · Containment decision-making · Blue team incident response
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
