@@ -1,0 +1,95 @@
+## Overview
+
+Simulated SOC investigation into anomalous outbound network activity from an internal endpoint. Trigger: connection volume/timing to an external destination that deviated from normal traffic baseline. Objective: determine whether sensitive data was actually transferred out, and if so, scope the exposure.
+
+## Investigation Question
+
+Was sensitive organizational data transferred to an unauthorized external destination?
+
+## Hypothesis
+
+A compromised account or endpoint was used to collect and stage data, then transfer it to an external destination — consistent with the exfiltration stage of a broader intrusion.
+
+## Data Sources
+
+- Network traffic / firewall logs
+- DNS query logs
+- File access logs
+- User activity records
+- Endpoint security events
+- Cloud activity logs
+
+## Methodology
+
+**Step 1 — Outbound traffic analysis**
+Reviewed outbound connections for the flagged endpoint: destination IP/domain reputation, transfer volume, connection frequency, and timing relative to normal business hours and the endpoint's typical traffic baseline.
+
+**Step 2 — Pre-transfer activity review**
+Checked file access logs on the source endpoint in the window before the outbound activity — looking for bulk file access, archive creation (zip/rar), or access to sensitive file shares that would indicate staging before transfer.
+
+**Step 3 — Correlation across sources**
+Correlated the network activity with endpoint process data and user authentication events to build a full timeline: what process initiated the connection, what user context it ran under, and whether any other suspicious activity (malware execution, unusual login) preceded it.
+
+## Findings
+
+**Network activity:** Outbound connection to an external destination outside the endpoint's normal traffic baseline, with transfer volume/timing inconsistent with routine business use (cloud sync, expected SaaS traffic, etc.).
+
+**Destination:** External IP/domain reviewed for reputation — not associated with a sanctioned business service in use by the organization.
+
+**Pre-transfer activity:** File access logs were reviewed for staging behavior (bulk access, compression) prior to the outbound connection. Findings here are the key evidentiary gap — confirming or ruling out archive creation/bulk file access is what would move this from "suspicious" to "confirmed exfiltration."
+
+**Process/user context:** Correlated the connection with the initiating process and account. No confirmed malware execution was identified on the endpoint, and no other suspicious authentication activity was found tied to the account in the surrounding window.
+
+**Scope:** No confirmed large-scale data transfer was identified during the investigation period — the observed activity was anomalous enough to warrant escalation, but full-content inspection (DLP/packet capture) would be needed to confirm data type and volume actually transferred.
+
+**Assessment:** Suspicious outbound activity consistent with possible exfiltration, not conclusively confirmed. Escalated for DLP/deep-packet review and formal data classification of what (if anything) left the network.
+
+## IOCs
+
+| Indicator | Observation |
+|---|---|
+| Outbound connection | Anomalous destination, volume/timing |
+| Destination reputation | Not a sanctioned business service |
+| Pre-transfer file access | Reviewed for staging behavior |
+| Initiating process | Correlated, no confirmed malware |
+| Account activity | No other suspicious auth found |
+
+## MITRE ATT&CK Mapping
+
+| Technique | ID |
+|---|---|
+| Exfiltration Over C2 Channel | T1041 |
+| Automated Exfiltration | T1020 |
+| Archive Collected Data | T1560 |
+| Data from Local System | T1005 |
+
+## Risk Rating: High
+
+Data exfiltration directly threatens confidentiality and can carry regulatory/reputational consequences regardless of volume. Rated high pending DLP confirmation — the cost of under-reacting to a false negative here is high enough to justify escalation on suspicious pattern alone.
+
+## Recommendations
+
+- Escalate to DLP/full packet capture review to determine actual data content and volume transferred, if any.
+- Block the destination IP/domain pending reputation confirmation.
+- Isolate the endpoint if staging behavior (bulk access, archiving) is confirmed in follow-up review.
+- Force credential reset for the associated account as a precaution.
+- Review DLP policy coverage for the file shares/data types potentially involved — close any gaps that let this go undetected until network-layer alerting caught it.
+- Implement egress filtering/allowlisting for sensitive network segments to reduce future exfiltration surface.
+
+## Detection Query Example (KQL)
+
+```kql
+DeviceNetworkEvents
+| where RemoteIPType == "Public"
+| summarize TotalBytes = sum(TotalBytesSent), Connections = count() by DeviceName, RemoteIP, bin(Timestamp, 1h)
+| where TotalBytes > 500000000
+| order by TotalBytes desc
+```
+
+## Skills Demonstrated
+
+Network traffic analysis · DLP investigation · File access correlation · Threat hunting · MITRE ATT&CK mapping · KQL · Incident response · Blue team operations
+
+## Disclaimer
+
+Simulated exercise for portfolio/training purposes. Not a real incident.
